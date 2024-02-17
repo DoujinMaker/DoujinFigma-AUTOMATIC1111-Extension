@@ -4,8 +4,8 @@ import numpy as np
 from modules.processing import Processed, StableDiffusionProcessingImg2Img, process_images, images, fix_seed
 from modules.shared import opts, cmd_opts, state
 import modules.scripts as scripts
-import gradio as gr
 from fastapi import FastAPI, Body,Header,status
+from gradio import components,Blocks,Row
 
 
 def import_or_install(package,pip_name=None):
@@ -44,23 +44,40 @@ class Script(scripts.Script):
         return is_img2img
     def ui(self, is_img2img):
         if not is_img2img: return
-        alpha_matting=gr.inputs.Checkbox(label="Alpha Matting")
-        alpha_matting_foreground_threshold=gr.inputs.Slider(minimum=0, maximum=255,step=1, default=240, label="Alpha Matting Foreground Threshold")
-        alpha_matting_background_threshold=gr.inputs.Slider(minimum=0, maximum=255,step=1, default=10, label="Alpha Matting Background Threshold")
-        alpha_matting_erode_size=gr.inputs.Slider(minimum=0, maximum=255,step=1, default=10, label="Alpha Matting Erode Size")
-        session_name=gr.inputs.Dropdown(["u2net", "u2netp","u2net_human_seg","u2net_cloth_seg","silueta"], label="Session")
-        only_mask=gr.inputs.Checkbox(label="Only Mask")
-        post_process_mask=gr.inputs.Checkbox(label="Post Process Mask")
-        with gr.Blocks() as demo:
-            with gr.Row().style(equal_height=True):
-                image=gr.Image(type="pil")
-                mask=gr.Image(type="pil")
-        btn = gr.Button(value="Preview Remove Background")
+        alpha_matting=components.Checkbox(label="Alpha Matting")
+        alpha_matting_foreground_threshold=components.Slider(minimum=0, maximum=255,step=1, default=240, label="Alpha Matting Foreground Threshold")
+        alpha_matting_background_threshold=components.Slider(minimum=0, maximum=255,step=1, default=10, label="Alpha Matting Background Threshold")
+        alpha_matting_erode_size=components.Slider(minimum=0, maximum=255,step=1, default=10, label="Alpha Matting Erode Size")
+        session_name=components.Dropdown(["u2net", "u2netp","u2net_human_seg","u2net_cloth_seg","silueta"], label="Session")
+        only_mask=components.Checkbox(label="Only Mask")
+        post_process_mask=components.Checkbox(label="Post Process Mask")
+        with Blocks() as demo:
+            with Row(equal_height=True):
+                image=components.Image(type="pil")
+                mask=components.Image(type="pil")
+        btn = components.Button(label="Preview Remove Background")
         if image is not None:
             btn.click(remove_background, inputs=[image,alpha_matting,alpha_matting_foreground_threshold,alpha_matting_background_threshold,\
                                                  alpha_matting_erode_size,session_name,only_mask,post_process_mask], outputs=[mask])
         return [image,alpha_matting,alpha_matting_foreground_threshold,alpha_matting_background_threshold,alpha_matting_erode_size,session_name,\
                 only_mask,post_process_mask]
+        # alpha_matting=gr.inputs.Checkbox(label="Alpha Matting")
+        # alpha_matting_foreground_threshold=gr.inputs.Slider(minimum=0, maximum=255,step=1, default=240, label="Alpha Matting Foreground Threshold")
+        # alpha_matting_background_threshold=gr.inputs.Slider(minimum=0, maximum=255,step=1, default=10, label="Alpha Matting Background Threshold")
+        # alpha_matting_erode_size=gr.inputs.Slider(minimum=0, maximum=255,step=1, default=10, label="Alpha Matting Erode Size")
+        # session_name=gr.inputs.Dropdown(["u2net", "u2netp","u2net_human_seg","u2net_cloth_seg","silueta"], label="Session")
+        # only_mask=gr.inputs.Checkbox(label="Only Mask")
+        # post_process_mask=gr.inputs.Checkbox(label="Post Process Mask")
+        # with gr.Blocks() as demo:
+        #     with gr.Row().style(equal_height=True):
+        #         image=gr.Image(type="pil")
+        #         mask=gr.Image(type="pil")
+        # btn = gr.Button(value="Preview Remove Background")
+        # if image is not None:
+        #     btn.click(remove_background, inputs=[image,alpha_matting,alpha_matting_foreground_threshold,alpha_matting_background_threshold,\
+        #                                          alpha_matting_erode_size,session_name,only_mask,post_process_mask], outputs=[mask])
+        # return [image,alpha_matting,alpha_matting_foreground_threshold,alpha_matting_background_threshold,alpha_matting_erode_size,session_name,\
+        #         only_mask,post_process_mask]
     def run(self,p,image,alpha_matting,alpha_matting_foreground_threshold,alpha_matting_background_threshold,alpha_matting_erode_size,session_name,\
                 only_mask,post_process_mask):
         if image is None:
@@ -73,7 +90,7 @@ class Script(scripts.Script):
         proc.images.append(mask)
         return proc
 
-def auto_mask_api(_: gr.Blocks, app: FastAPI):
+def auto_mask_api(_: Blocks, app: FastAPI):
     @app.get('/figma/healthcheck', status_code=status.HTTP_200_OK)
     def perform_healthcheck():
         return {'healthcheck': 'Everything OK!'}
